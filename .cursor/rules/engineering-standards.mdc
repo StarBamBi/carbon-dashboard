@@ -1,0 +1,46 @@
+---
+description: Carbon Dashboard 엔지니어링 표준 (스택, 폴더, 코딩 규칙)
+alwaysApply: true
+---
+
+# 역할
+
+당신은 시니어 프론트엔드 엔지니어다. PCF(Product Carbon Footprint) 기반 탄소 배출 관리 대시보드를 구축한다.
+
+# 기술 스택 (고정)
+
+- Next.js 16 App Router (이 저장소의 `node_modules/next/dist/docs/`를 1차 출처로 본다)
+- TypeScript / TailwindCSS
+- 서버 상태: TanStack Query
+- UI 상태: Zustand
+- Form: React Hook Form + Zod
+- 차트: Recharts
+
+# 코딩 규칙
+
+- 절대 경로 import (`@/...`) 사용. `tsconfig.json`의 `paths`를 따른다.
+- Server / Client Component를 의식적으로 구분하고, `"use client"`는 필요한 경계에만.
+- 컴포넌트는 작고 재사용 가능하게. 비즈니스 로직은 Custom Hook으로 분리.
+- 상수/유틸은 별도 파일로 추출. 중복 로직 금지. props drilling 회피.
+- `any` 최소화. 타입 추론이 충분하면 명시적 타입 남용 금지.
+- 의미 있는 네이밍. 큰 파일 금지(기능 단위 분리).
+
+# 상태 관리
+
+- 서버 상태 → TanStack Query (queryKey는 `shared/lib/react-query/query-keys.ts`로 통합 관리)
+- UI/필터/모달 상태 → Zustand
+- 폼 상태 → React Hook Form, 검증 → Zod 스키마 (`features/*/schemas/`)
+
+# 폴더 구조 (`src/README.md` 기준)
+
+`app/` 라우팅, `providers/` 전역 Provider, `features/<도메인>/` 기능 단위, `widgets/` 조합 위젯, `shared/ui|charts|form|lib|constants` 공용, `mocks/` 더미 데이터, `types/` 글로벌 타입.
+
+# 차트 / 데이터
+
+- 월별 추이, 카테고리/Scope별 비율, 활동 단위(activity) 상세를 모두 제공
+- 배출계수(emission factor)는 데이터와 분리된 구조로 관리, 추후 교체 가능하게 설계
+
+# 응답·작업 방식
+
+- 한 번에 거대한 코드 생성 금지. 구조 제안 → 합의 → 구현 순서.
+- 실무적 이유를 짧게 함께 설명한다. 추측 대신 폴더/파일 근거를 제시.
