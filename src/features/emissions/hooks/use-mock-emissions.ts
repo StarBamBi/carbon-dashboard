@@ -4,6 +4,7 @@ import { useMemo } from "react";
 
 import type { EmissionResult, GhgScope } from "@/src/entities/emission/types";
 import { GHG_SCOPES } from "@/src/entities/emission/types";
+import { aggregateByLifeCycle } from "@/src/features/emissions/utils/aggregate-by-life-cycle";
 import { aggregateByMonth } from "@/src/features/emissions/utils/aggregate-by-month";
 import { aggregateByScope } from "@/src/features/emissions/utils/aggregate-by-scope";
 import { calculateEmissions } from "@/src/features/emissions/utils/calculate-emission";
@@ -29,6 +30,7 @@ export const useMockEmissions = () =>
     );
     const byScope = aggregateByScope(results);
     const byMonth = aggregateByMonth(results);
+    const byLifeCycle = aggregateByLifeCycle(results);
     const totalKg = sumEmissionsKg(results);
 
     const monthlyChartRows: MonthlyChartRow[] = byMonth.map((row) => {
@@ -42,5 +44,5 @@ export const useMockEmissions = () =>
       return { month: row.month, totalKg: row.totalKg, ...flat };
     });
 
-    return { results, byScope, byMonth, monthlyChartRows, totalKg };
+    return { results, byScope, byMonth, byLifeCycle, monthlyChartRows, totalKg };
   }, []);

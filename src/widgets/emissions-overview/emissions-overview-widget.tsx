@@ -1,6 +1,7 @@
 "use client";
 
 import { EmissionsKpiCards } from "@/src/features/emissions/components/emissions-kpi-cards";
+import { EmissionsLifeCycleChart } from "@/src/features/emissions/components/emissions-life-cycle-chart";
 import { EmissionsMonthlyTrendChart } from "@/src/features/emissions/components/emissions-monthly-trend-chart";
 import { ScopeBreakdownDonut } from "@/src/features/emissions/components/scope-breakdown-donut";
 import { ScopeFilterToggle } from "@/src/features/emissions/components/scope-filter-toggle";
@@ -9,13 +10,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src
 
 const SCOPE_TITLE_ID = "scope-breakdown-title";
 const TREND_TITLE_ID = "monthly-trend-title";
+const LIFECYCLE_TITLE_ID = "life-cycle-title";
 
 /**
  * 대시보드 첫 화면용 조합 위젯.
- * KPI(경영자) + Scope 도넛 + 월별 추이를 동일 데이터 스냅샷으로 묶는다.
+ * KPI(경영자) + 추이/Scope/LifeCycle 차트(실무자·도메인)를 동일 데이터 스냅샷으로 묶는다.
  */
 export const EmissionsOverviewWidget = () => {
-  const { byScope, totalKg, monthlyChartRows } = useMockEmissions();
+  const { byScope, byLifeCycle, totalKg, monthlyChartRows } = useMockEmissions();
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-10 sm:px-6">
@@ -65,6 +67,19 @@ export const EmissionsOverviewWidget = () => {
         </CardHeader>
         <CardContent>
           <ScopeBreakdownDonut byScope={byScope} titleId={SCOPE_TITLE_ID} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle id={LIFECYCLE_TITLE_ID}>PCF 전과정 단계별 배출량</CardTitle>
+          <CardDescription>
+            원소재 → 제조 → 운송 → 사용 → 폐기 5단계 분해. 사용·폐기 단계가 비어 있다는 것 자체가
+            데이터 누락 시그널이므로 0 막대도 그대로 노출합니다.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <EmissionsLifeCycleChart byLifeCycle={byLifeCycle} titleId={LIFECYCLE_TITLE_ID} />
         </CardContent>
       </Card>
     </div>

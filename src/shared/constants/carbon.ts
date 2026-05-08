@@ -87,5 +87,18 @@ export const SCOPE_COLOR: Record<GhgScope, string> = {
   scope3: "#10b981",
 };
 
+/**
+ * PCF 단계별 색상.
+ * - Scope 색과 충돌하지 않도록 다른 hue 군 선택.
+ * - 색만으로 정보 전달 금지: UI 는 항상 한글 라벨/수치를 함께 노출.
+ */
+export const LIFE_CYCLE_COLOR: Record<LifeCycleStage, string> = {
+  raw_materials: "#a16207",
+  manufacturing: "#475569",
+  transport: "#0891b2",
+  use: "#7c3aed",
+  end_of_life: "#71717a",
+};
+
 /** 1,000 kgCO2e 이상이면 tCO2e 로 환산해 보조 표기하기 위한 임계값 */
 export const TON_THRESHOLD_KG = 1000;
