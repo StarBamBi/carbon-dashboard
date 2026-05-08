@@ -100,3 +100,19 @@
   - TanStack Query는 루트에 Provider 한 겹만 추가해 이후 API 훅에서 즉시 사용 가능.
 - **관련 커밋**: (이번 단계 커밋 해시 추후 기재)
 
+## 2026-05-09 - 월별 추이 차트 + Scope 필터 토글 (인터랙션)
+
+- **무엇을**: `EmissionsMonthlyTrendChart`(Recharts stacked Area), `ScopeFilterToggle`(Zustand 연동), `useMockEmissions` 에 `byMonth` / `monthlyChartRows`(평탄화 시리즈) 추가, `EmissionsOverviewWidget` 에 추이 섹션 통합.
+- **프롬프트 요지**: 월별 추이 차트를 `/dashboard` 에 붙이되 인터랙티브 요소도 함께 갖춰 달라.
+- **AI 출력 평가**: 일부 수정.
+- **수정·검증 포인트**:
+  - Recharts 의 nested dataKey 대신 `monthlyChartRows: { month, scope1, scope2, scope3, totalKg }` 평탄화 → 시리즈마다 단일 컬럼이라 type 안전·tooltip payload 처리 단순.
+  - 토글 → Area 갱신 흐름은 `useEmissionsFilterStore` (이미 있던 store) 그대로 사용. "all" 일 때만 `stackId` 부여, 단일 Scope 선택 시 stack 해제로 단색 면 표시.
+  - 색만으로 정보 전달 금지 룰: 토글 버튼에 색 점 + 텍스트, 툴팁에 한글 Scope 라벨 + 합계 보조 표기(`formatCo2eDual`).
+  - SSG 높이 -1 경고 방지: `ResponsiveContainer height={280}` 고정.
+  - Y축 tick formatter 에서 `formatCo2eAuto` 사용 → kg/t 자동 환산이 실제 화면에서 작동하는지 시각 검증.
+- **결정 이유**:
+  - 차트는 **Stacked Area** 선택. 막대보다 월간 변동폭과 Scope 누적이 동시에 보이고, 라인 단일보다 Scope 분포 메시지를 더 직관적으로 전달.
+  - 필터 store 를 Zustand 로 둔 덕에 추후 도넛/테이블도 같은 store 를 구독해 동기화 가능 → "프로젝트 전반 인터랙션" 으로 확장 여지 확보.
+- **관련 커밋**: (이번 단계 커밋 해시 추후 기재)
+

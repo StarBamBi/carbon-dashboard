@@ -1,18 +1,21 @@
 "use client";
 
-import { ScopeBreakdownDonut } from "@/src/features/emissions/components/scope-breakdown-donut";
 import { EmissionsKpiCards } from "@/src/features/emissions/components/emissions-kpi-cards";
+import { EmissionsMonthlyTrendChart } from "@/src/features/emissions/components/emissions-monthly-trend-chart";
+import { ScopeBreakdownDonut } from "@/src/features/emissions/components/scope-breakdown-donut";
+import { ScopeFilterToggle } from "@/src/features/emissions/components/scope-filter-toggle";
 import { useMockEmissions } from "@/src/features/emissions/hooks/use-mock-emissions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/shared/ui/card";
 
-const CHART_TITLE_ID = "scope-breakdown-title";
+const SCOPE_TITLE_ID = "scope-breakdown-title";
+const TREND_TITLE_ID = "monthly-trend-title";
 
 /**
  * 대시보드 첫 화면용 조합 위젯.
- * KPI(경영자) + Scope 도넛(실무자 점검)을 한 블록에서 동일 데이터 스냅샷으로 묶는다.
+ * KPI(경영자) + Scope 도넛 + 월별 추이를 동일 데이터 스냅샷으로 묶는다.
  */
 export const EmissionsOverviewWidget = () => {
-  const { byScope, totalKg } = useMockEmissions();
+  const { byScope, totalKg, monthlyChartRows } = useMockEmissions();
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-10 sm:px-6">
@@ -36,14 +39,32 @@ export const EmissionsOverviewWidget = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle id={CHART_TITLE_ID}>Scope별 배출 비중</CardTitle>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <CardTitle id={TREND_TITLE_ID}>월별 배출 추이</CardTitle>
+              <CardDescription>
+                Scope 1·2·3 누적 면적 차트. 필터를 바꾸면 같은 데이터를 단일 Scope로도 볼 수
+                있습니다.
+              </CardDescription>
+            </div>
+            <ScopeFilterToggle ariaLabel="추이 차트 Scope 필터" />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <EmissionsMonthlyTrendChart rows={monthlyChartRows} titleId={TREND_TITLE_ID} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle id={SCOPE_TITLE_ID}>Scope별 배출 비중</CardTitle>
           <CardDescription>
             Scope 1·2·3 구분 색상은 범례·표와 함께 제공합니다. Scope 1 데이터가 없으면 슬라이스는
             생략되고 표에는 0으로 표시됩니다.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ScopeBreakdownDonut byScope={byScope} titleId={CHART_TITLE_ID} />
+          <ScopeBreakdownDonut byScope={byScope} titleId={SCOPE_TITLE_ID} />
         </CardContent>
       </Card>
     </div>
