@@ -1,36 +1,137 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Carbon Dashboard (PCF 탄소 발자국 대시보드)
 
-## Getting Started
+제조·물류 등 B2B 고객이 **원소재·전기·운송** 활동 데이터를 입력하면, 제품별 **탄소 발자국(PCF)** 을 시각화하는 **인터랙티브 대시보드**입니다. 과제용 더미 데이터(CT-045)를 사용합니다.
 
-First, run the development server:
+| 라우트 | 대상 페르소나 | 설명 |
+| --- | --- | --- |
+| `/` → `/dashboard` | 경영자 + 실무자 | 총 배출 KPI, 월별 Scope 추이(필터), Scope 비중(도넛), **PCF 전과정 단계별** 배출 |
+| `/emissions` | 실무자 | 활동별 **활동량 × 배출계수 = 배출량** 표, 계수 **버전·출처**, 검색·Scope 필터 |
+| `/reports` | (예정) | 기간 요약·보내기 등 확장 예정 |
+
+---
+
+## 빠른 시작
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+브라우저에서 [http://localhost:3000](http://localhost:3000) 을 열면 `/dashboard` 로 이동합니다.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build   # 프로덕션 빌드
+npm run lint    # ESLint
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## 도메인 해석
 
-To learn more about Next.js, take a look at the following resources:
+### PCF · 단위
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **PCF (Product Carbon Footprint)**: 제품 한 단위가 전 생애주기에서 배출하는 온실가스를 **CO₂e(이산화탄소 환산)** 로 합산한 양.
+- 화면에 보이는 배출량은 **kgCO₂e** 기준이며, **1,000 kgCO₂e 이상**은 보조적으로 **tCO₂e** 로도 표기합니다.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### GHG Scope
 
-## Deploy on Vercel
+| Scope | 의미 | 이 더미에서의 예 |
+| --- | --- | --- |
+| **Scope 1** | 직접 배출 | 데이터 없음 → 0 |
+| **Scope 2** | 구매 에너지(전력 등) | 한국전력 전기 사용 |
+| **Scope 3** | 가치사슬 | 원소재(플라스틱), 운송(트럭) |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### PCF 전과정(Life Cycle) 단계
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+원소재 → 제조 → 운송 → 사용 → 폐기 순으로 분해합니다. 더미에는 **사용·폐기** 단계 입력이 없어 **0**으로 표시되며, “데이터가 없다”는 사실 자체가 PCF 관점에서 의미가 있습니다.
+
+### 핵심 계산
+
+모든 배출량은 다음 공식과 **1:1**로 대응합니다.
+
+```text
+배출량(kgCO₂e) = 활동량 × 해당 활동 발생일 기준의 유효 배출계수
+```
+
+- **활동량**과 **배출계수**는 데이터 구조상 분리되어 있습니다(계수 변경·버전 관리 시나리오 대비).
+- 계수는 **버전(`version`)·유효기간(`validFrom` / `validTo`)·출처(`source`)** 를 가집니다. 전기(한국전력)는 데모용으로 과거 버전 계수(v0)를 추가해 **일자별로 다른 계수가 선택**될 수 있음을 보여 줍니다.
+
+---
+
+## 시스템 설계
+
+### 기술 스택
+
+- **Next.js 16** (App Router) · **TypeScript** · **Tailwind CSS v4**
+- **TanStack Query** — 전역 `QueryProvider` (`app/layout.tsx`). 현재는 mock 위주이나 API 연동 시 동일 패턴 확장.
+- **Zustand** — UI 필터(예: Scope). 대시보드 월별 차트와 `/emissions` 테이블이 **동일 스토어**를 구독해 필터 상태를 공유합니다.
+- **Recharts** — 도넛, 월별 누적 면적, PCF 단계별 가로 막대.
+- **React Hook Form + Zod + @hookform/resolvers** — 의존성 포함(폼·검증 단계에서 사용 예정).
+
+### 폴더 구조(요약)
+
+| 경로 | 역할 |
+| --- | --- |
+| `app/` | 라우팅, `(dashboard)` 그룹 레이아웃(사이드바·헤더) |
+| `src/entities/` | 도메인 타입(활동, 배출계수, 배출 결과) |
+| `src/features/emissions/` | 배출 도메인: 계산·집계·훅·컴포넌트 |
+| `src/widgets/` | 페이지 단위 조합(요약, 활동, 앱 셸) |
+| `src/shared/` | UI 카드, 상수(`carbon`, `navigation`), 포맷터, React Query 설정 |
+| `src/mocks/fixtures/` | CT-045 활동·배출계수 fixture |
+| `docs/AI_USAGE_LOG.md` | AI 사용·설계 결정 누적 로그 |
+
+### 설계 결정과 트레이드오프
+
+1. **집계·포맷은 순수 함수** (`features/emissions/utils`, `shared/lib/utils`)  
+   - 장점: 차트·테이블이 동일 숫자를 재사용, 테스트·발표 시 “식이 코드와 일치” 설명이 쉬움.  
+   - 단점: UI에서 약간의 보일러플레이트(훅에서 한 번 감싸기).
+
+2. **Scope 필터를 페이지 간 공유(Zustand)**  
+   - 장점: 대시보드 ↔ 활동 화면 전환 시 맥락 유지.  
+   - 단점: “페이지마다 독립 필터”를 원하면 스토어를 분리해야 함 → 현재는 과제 데모에 맞춰 **일관된 탐색**을 우선.
+
+3. **PCF 단계는 항상 5행(0 포함)**  
+   - 장점: 누락 단계가 숨지 않음.  
+   - 단점: 차트가 다소 장황해질 수 있음 → 가로 막대 + 표로 정보 밀도 보완.
+
+4. **Postgres / Excel 직접 임포트**  
+   - 과제 옵션. 현재 저장소는 **mock + 클라이언트 집계**로 요구사항의 “시각화·도메인 반영”에 집중했습니다. 가점 항목은 `docs/AI_USAGE_LOG.md`에 향후 확장으로 명시해 두었습니다.
+
+---
+
+## 페르소나별 UX
+
+### 경영자
+
+- **첫 화면(`/dashboard`)**: 총 배출량, Scope 2·3 비중(KPI 카드), **%와 절대값 동시** 표기.
+- **월별 추이**: Scope 필터로 “전기 vs 가치사슬” 관점을 빠르게 전환.
+- **PCF 전과정 차트**: 제품 단계별 리스크가 어디에 쏠리는지 한눈에 파악.
+
+### 실무자
+
+- **`/emissions`**: 행 단위로 **활동량·적용 계수·버전·출처·배출량·계산식**을 확인. 검색으로 특정 월·항목·출처를 빠르게 찾음.
+- **Scope 필터**: 대시보드와 동기 → 요약과 상세를 오가며 **같은 필터 맥락**으로 점검.
+
+---
+
+## AI 활용 방식
+
+과제 정책에 따라 **AI 도구 사용은 허용**되나, 발표 시 다음을 **구분해 설명**할 수 있어야 합니다: 무엇을 했는지 / 어떤 프롬프트였는지 / 왜 그렇게 결정했는지.
+
+- 상세한 단계별 기록: **[`docs/AI_USAGE_LOG.md`](docs/AI_USAGE_LOG.md)**  
+- 커밋 메시지에도 요약을 남기는 것을 권장합니다(프로젝트 룰 `ai-usage-policy.mdc`).
+
+---
+
+## 제출·평가 체크리스트(자체 점검)
+
+- [x] **도메인**: PCF, GHG Scope, 전과정 단위, `활동량 × 계수` 공식이 코드·UI·본 README에 일관되게 등장  
+- [x] **설계**: feature 단위 모듈, mock/계산/집계 분리, 확장 가능한 타입·상수  
+- [x] **UX**: 경영자 요약 + 실무자 상세, 색만이 아닌 라벨·표 병기, 반응형(테이블 가로 스크롤 등)  
+- [x] **논리적 설명**: README(본 문서) + `docs/AI_USAGE_LOG.md`  
+
+---
+
+## 라이선스 및 기여
+
+과제용 저장소입니다. 문의는 저장소 이슈를 통해 주세요.
