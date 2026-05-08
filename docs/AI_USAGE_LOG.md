@@ -72,7 +72,7 @@
 
 ## 2026-05-09 - Scope 도넛 + KPI 카드 (홈 대시보드)
 
-- **무엇을**: Recharts 도넛(Scope 비중) + 총배출/Scope2·3 KPI 카드 + 조합 위젯 + 공용 Card + `useMockEmissions` 훅. `app/page.tsx`를 위젯으로 교체, `layout` 메타·`lang="ko"` 갱신.
+- **무엇을**: Recharts 도넛(Scope 비중) + 총배출/Scope2·3 KPI 카드 + 조합 위젯 + 공용 Card + `useMockEmissions` 훅. 요약 UI는 이후 C 단계에서 `/dashboard`로 옮김(당시에는 `app/page.tsx`에 직접 연결).
 - **프롬프트 요지**: A 다음 B 진행 — 핵심 위젯 1개(Scope 도넛 + KPI)로 시각화 검증.
 - **AI 출력 평가**: 일부 수정.
 - **수정·검증 포인트**:
@@ -84,5 +84,19 @@
 - **결정 이유**:
   - 위젯을 `widgets/emissions-overview`에 두어 `features`(도메인)와 `app`(라우팅) 사이 조합 레이어를 명확히 함.
   - KPI는 경영자(총량·비중+절대값 동시), 도넛+표는 실무자(Scope 점검) 페르소나에 맞춘 정보 밀도.
+- **관련 커밋**: (이번 단계 커밋 해시 추후 기재)
+
+## 2026-05-09 - 대시보드 레이아웃 셸 + 라우팅
+
+- **무엇을**: `(dashboard)` 라우트 그룹 + `DashboardShell`(사이드바·헤더) + `/dashboard`·`/emissions`·`/reports` + 루트 `/` → `/dashboard` 리다이렉트. 루트 `layout`에 `QueryProvider` 연결. 내비 상수 `shared/constants/navigation.ts`.
+- **프롬프트 요지**: C 단계 — 레이아웃 셸과 라우팅.
+- **AI 출력 평가**: 일부 수정.
+- **수정·검증 포인트**:
+  - 라우트 그룹 `(dashboard)`로 URL 에 `(dashboard)` 가 노출되지 않게 유지.
+  - 활성 링크: `pathname === href || pathname.startsWith(\`\${href}/\`)` 만 사용. `href !== "/"` 비교는 `MAIN_NAV` 의 href 가 리터럴 유니온이라 빌드 타입 오류(dead code)로 실패 → 제거.
+  - `/emissions`·`/reports` 는 다음 작업용 플레이스홀더만 배치(스코프 과다 확장 방지).
+- **결정 이유**:
+  - 셸을 `widgets/app-shell`에 두어 `app/` 은 라우팅·메타만 담당(평가 4축의 모듈형 구조).
+  - TanStack Query는 루트에 Provider 한 겹만 추가해 이후 API 훅에서 즉시 사용 가능.
 - **관련 커밋**: (이번 단계 커밋 해시 추후 기재)
 
