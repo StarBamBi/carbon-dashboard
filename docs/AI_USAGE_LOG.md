@@ -49,5 +49,40 @@
   - 활동 카테고리만 알면 Scope·LifeCycle 이 결정되므로 매핑을 상수 1곳(`carbon.ts`)에 집중 → 새 카테고리 추가 시 한 파일만 수정.
   - 계수와 활동을 분리해 저장 → "활동량은 그대로, 계수만 갱신" 운영 시나리오 지원.
   - 계산 결과(`EmissionResult`)에 활동량과 계수를 함께 보관 → UI 가 "활동량 × 계수 = 배출량" 식을 그대로 노출 가능 (도메인 이해 평가에 직결).
+- **관련 커밋**: 57f2d99
+
+## 2026-05-09 - 집계 utils + 표시 포맷터
+
+- **무엇을**: 차트가 그대로 받아쓸 수 있는 집계 함수 5종 + 단위·비율 포맷터 2종.
+  - `features/emissions/types/aggregation.ts`
+  - `features/emissions/utils/{sum-emissions, aggregate-by-month, aggregate-by-scope, aggregate-by-life-cycle, aggregate-by-category}.ts`
+  - `shared/lib/utils/{format-co2e, format-percent}.ts`
+- **프롬프트 요지**: 다음 단계로 집계 utils(A) 진행. 차트가 받을 데이터를 미리 만드는 순수 함수 + 룰의 표기 규칙(kg/t 보조표기, % + 절대값) 포맷터까지.
+- **AI 출력 평가**: 일부 수정.
+- **수정·검증 포인트**:
+  - 월별 집계는 `occurredAt.slice(0, 7)` 로 단순 처리(date-fns/dayjs 의존성 미추가) — 룰의 "추측 대신 폴더/파일 근거" 원칙. 입력은 항상 ISO date 라 안전.
+  - Scope·LifeCycle·Category 집계는 데이터에 없는 항목도 0 으로 포함 → 도넛/범례에서 빈 항목이 사라져 "데이터 누락" 자체를 못 알아채는 사고 방지.
+  - 비율은 항상 0~1 소수로 반환하고, % 변환은 formatter 가 책임 → 차트 라이브러리에 직접 % 값을 넘겨야 하는 상황에서도 재사용.
+  - 포맷터는 NaN/음수에 대해 fallback 문자열을 반환하도록 방어 코드 추가.
+  - `formatCo2eDual` 은 임계값 미만이면 보조표기를 생략 → "12 kgCO2e (0.012 tCO2e)" 같은 가독성 떨어지는 출력 방지.
+- **결정 이유**:
+  - 집계와 포맷팅을 **순수 함수**로 분리 → 차트(B)와 페이지(C)에서 동일 함수를 재사용해 모든 위젯이 같은 숫자를 보여줌(평가 4축의 안정성).
+  - 집계 결과 타입을 차트 dataKey 와 1:1 매칭되는 슬러그로 설계 → Recharts 가 그대로 소비, 변환 레이어 불필요.
+- **관련 커밋**: (이번 단계 커밋 해시 추후 기재)
+
+## 2026-05-09 - Scope 도넛 + KPI 카드 (홈 대시보드)
+
+- **무엇을**: Recharts 도넛(Scope 비중) + 총배출/Scope2·3 KPI 카드 + 조합 위젯 + 공용 Card + `useMockEmissions` 훅. `app/page.tsx`를 위젯으로 교체, `layout` 메타·`lang="ko"` 갱신.
+- **프롬프트 요지**: A 다음 B 진행 — 핵심 위젯 1개(Scope 도넛 + KPI)로 시각화 검증.
+- **AI 출력 평가**: 일부 수정.
+- **수정·검증 포인트**:
+  - 차트는 `"use client"` 경계에만 두고, 계산·집계는 기존 순수 함수 재사용 → `useMockEmissions`에서 `calculateEmissions` + `aggregateByScope` 한 스냅샷으로 묶음.
+  - 색약 대응: 슬라이스 색만이 아니라 표에 Scope 코드(`scope1` 등)·한글 라벨·수치를 병기. 툴팁에 배출량(이중 단위) + 비중.
+  - Scope 1 이 0이면 Pie 슬라이스에서 제외하되 표에는 0행 유지 → "데이터 없음"과 "0배출" 구분.
+  - Next.js SSG 시 `ResponsiveContainer` 높이 -1 경고 → `height={260}` 고정으로 해결(`npm run build` 재확인).
+  - 슬라이스 위 텍스트 라벨은 Recharts 타입/가독성 이슈로 생략하고 표·범례·툴팁으로 대체.
+- **결정 이유**:
+  - 위젯을 `widgets/emissions-overview`에 두어 `features`(도메인)와 `app`(라우팅) 사이 조합 레이어를 명확히 함.
+  - KPI는 경영자(총량·비중+절대값 동시), 도넛+표는 실무자(Scope 점검) 페르소나에 맞춘 정보 밀도.
 - **관련 커밋**: (이번 단계 커밋 해시 추후 기재)
 
