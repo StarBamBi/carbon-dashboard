@@ -130,3 +130,18 @@
   - 과제 산출물의 "PCF 전과정 데이터 시각화" 정체성을 화면에 직접 드러내는 첫 컴포넌트. Scope·월별과 함께 3축 분해(시간·관리경계·생애주기)를 갖춰 실무자/경영자 모두에게 의미 제공.
 - **관련 커밋**: (이번 단계 커밋 해시 추후 기재)
 
+## 2026-05-09 - `/emissions` 활동 테이블 (실무자 점검)
+
+- **무엇을**: `EmissionsActivityWidget` + `useEmissionsActivityTable` + `enrichActivityRows` + `ActivityTableRow` 타입. 검색 input, 기존 `ScopeFilterToggle` 재사용, 계수 버전·출처·계산식 열.
+- **프롬프트 요지**: `/emissions` 에 활동 테이블(필터·검색·계수 버전 표시).
+- **AI 출력 평가**: 일부 수정.
+- **수정·검증 포인트**:
+  - 런타임 `enrichActivityRows` 는 `types` 가 아닌 `utils` 로 분리(타입 파일은 타입만).
+  - 계수 출처는 fixture 의 `EmissionFactor.source` 를 (category, subcategoryCode, version, factor) 로 역매칭.
+  - 계산식 열에 `활동량 × 계수 = 배출량` 을 그대로 노출 → 평가 4축 도메인 이해 축 직격.
+  - Scope 필터는 대시보드와 동일 `useEmissionsFilterStore` → 한 앱 안에서 필터 상태 일관(트레이드오프: 페이지 이동 시 필터 유지됨을 카드 설명에 명시).
+  - 가로 스크롤(`min-w` + `overflow-x-auto`)로 좁은 화면에서도 테이블 파손 방지.
+- **결정 이유**:
+  - 실무자 페르소나 핵심은 "활동량과 계수가 분리되어 있고 어떤 버전이 적용됐는지"를 한 눈에 보는 것 → 테이블이 최적 UI.
+- **관련 커밋**: (이번 단계 커밋 해시 추후 기재)
+
